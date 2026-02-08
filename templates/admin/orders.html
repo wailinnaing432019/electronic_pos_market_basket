@@ -1,0 +1,103 @@
+{% extends "admin/layout.html" %}
+{% block content %}
+<h2 class="fw-bold mb-4">Customer Orders</h2>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>Total Amount</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>#{{ order.trans_id }}</td>
+                    <td>{{ order.trans_date }}</td>
+                    <td class="fw-bold">{{ "{:,.0f}".format(order.total_amount) }} MMK</td>
+                    <td>
+                        <span
+                            class="badge {% if order.status == 'Completed' %}bg-success{% elif order.status == 'Pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            {{ order.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-info text-white view-details-btn" data-id="{{ order.trans_id }}">
+                            <i class="bi bi-eye"></i> View Items
+                        </button>
+                    </td>
+                    <td>
+                        <form action="/admin/order/status/{{ order.trans_id }}" method="POST" class="d-flex">
+                            <select name="status" class="form-select form-select-sm me-2">
+                                <option value="Pending" {{ 'selected' if order.status=='Pending' }}>Pending</option>
+                                <option value="Completed" {{ 'selected' if order.status=='Completed' }}>Completed
+                                </option>
+                                <option value="Cancelled" {{ 'selected' if order.status=='Cancelled' }}>Cancelled
+                                </option>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-dark">Update</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="modal fade" id="orderItemsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content shadow border-0">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Order Items - #<span id="modal-order-id"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th class="text-end">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="order-items-list">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.view-details-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const orderId = this.getAttribute('data-id');
+            document.getElementById('modal-order-id').innerText = orderId;
+
+            // Modal ကို အရင်ပြမယ်
+            const detailsModal = new bootstrap.Modal(document.getElementById('orderItemsModal'));
+            detailsModal.show();
+
+            // Server ဆီကနေ JSON data သွားတောင်းမယ်
+            fetch('/admin/order_details/' + orderId)
+                .then(res => res.json())
+                .then(data => {
+                    let rows = '';
+                    data.items.forEach(item => {
+                        rows += `<tr>
+                        <td>${item.product_name}</td>
+                        <td>${item.quantity}</td>
+                        <td class="text-end">${item.price.toLocaleString()} MMK</td>
+                    </tr>`;
+                    });
+                    document.getElementById('order-items-list').innerHTML = rows;
+                });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends "admin/layout.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Product Inventory</h2>
+    <button class="btn btn-warning fw-bold" data-bs-toggle="modal" data-bs-target="#addProductModal">+ Add New
+        Product</button>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Image</th>
+                    <th>Product Name</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td>#{{ p.product_id }}</td>
+                    <td>
+                        <img src="{{ url_for('static', filename='uploads/products/' + (p.image_url if p.image_url else 'default.png')) }}"
+                            alt="" class="rounded border" style="width: 50px; height: 50px; object-fit: cover;">
+                    </td>
+                    <td class="fw-bold">{{ p.product_name }}</td>
+                    <td>{{ "{:,.0f}".format(p.price) }} MMK</td>
+                    <td>{{ p.stock_quantity }}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary edit-btn" data-bs-toggle="modal"
+                            data-bs-target="#editProductModal" data-id="{{ p.product_id }}"
+                            data-name="{{ p.product_name }}" data-price="{{ p.price }}"
+                            data-stock_quantity="{{ p.stock_quantity }}" data-cat="{{ p.cat_id }}"
+                            data-image="{{ p.image_url }}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <a href="/admin/product/delete/{{ p.product_id }}" class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('ဖျက်မှာ သေချာပါသလား?')"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="editProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editForm" method="POST" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <img id="edit_preview" src="" class="rounded border mb-2"
+                            style="width: 100px; height: 100px; object-fit: cover;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Change Image</label>
+                        <input type="file" name="image" class="form-control" accept="image/*">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select name="cat_id" id="edit_cat_id" class="form-select" required>
+                            {% for cat in categories %}
+                            <option value="{{ cat.cat_id }}">{{ cat.cat_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" name="name" id="edit_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Price (MMK)</label>
+                        <input type="number" name="price" id="edit_price" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Stock Quantity</label>
+                        <input type="number" name="stock_quantity" id="edit_stock_quantity" class="form-control"
+                            required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary fw-bold">Update Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/admin/product/add" method="POST" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Product Image</label>
+                        <input type="file" name="image" class="form-control" accept="image/*">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select name="cat_id" class="form-select" required>
+                            <option value="" selected disabled>Category ရွေးချယ်ပါ</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.cat_id }}">{{ cat.cat_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Price (MMK)</label>
+                        <input type="number" name="price" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Stock Quantity</label>
+                        <input type="number" name="stock_quantity" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-warning fw-bold">Save Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.edit-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const id = this.getAttribute('data-id');
+            const name = this.getAttribute('data-name');
+            const price = this.getAttribute('data-price');
+            const cat = this.getAttribute('data-cat');
+            const image = this.getAttribute('data-image') || 'default.png';
+            const stock_quantity = this.getAttribute('data-stock_quantity') || 0;
+
+            document.getElementById('edit_name').value = name;
+            document.getElementById('edit_price').value = price;
+            document.getElementById('edit_stock_quantity').value = stock_quantity;
+            document.getElementById('edit_cat_id').value = cat;
+
+            // Image Preview ကို ပြောင်းမယ်
+            document.getElementById('edit_preview').src = '/static/uploads/products/' + image;
+
+            document.getElementById('editForm').action = '/admin/product/edit/' + id;
+        });
+    });
+</script>
+{% endblock %}
