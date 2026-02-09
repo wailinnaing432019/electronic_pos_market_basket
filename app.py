@@ -1,10 +1,12 @@
-from flask import flash,Flask, render_template, session, redirect, url_for, request
+from flask import flash,Flask, jsonify, render_template, session, redirect, url_for, request
 import mysql.connector
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import numpy as np
 import os
 from werkzeug.utils import secure_filename
+from apscheduler.schedulers.background import BackgroundScheduler 
+from mining_engine import MiningEngine
 
 app = Flask(__name__)
 app.secret_key = 'electrical_pos_secret_key' # Session သုံးဖို့ secret key လိုအပ်ပါတယ်
@@ -16,7 +18,19 @@ def get_db():
         password="",
         database="electrical_pos"
     )
+# auto run
 
+
+# ည ၁၂ နာရီမှာ auto run မယ့် function
+def scheduled_mining():
+    print("Auto-mining started at Midnight...")
+    engine = MiningEngine()
+    engine.run_analysis()
+
+scheduler = BackgroundScheduler()
+# နေ့တိုင်း ည ၀၀:၀၀ (၁၂ နာရီ) မှာ run ဖို့ သတ်မှတ်ခြင်း
+scheduler.add_job(func=scheduled_mining, trigger="cron", hour=00, minute=00)
+scheduler.start()
 
 # Security Decorator: Login ဝင်ထားမှ ပေးဝင်မယ့် logic
 def admin_required(f):
@@ -56,6 +70,15 @@ def admin_logout():
     session.pop('admin_id', None)
     session.pop('admin_name', None)
     return redirect(url_for('admin_login'))
+
+
+@app.route('/admin/run-mining')
+def trigger_mining():
+    print("Mining Process Started...")
+    engine = MiningEngine()
+    message = engine.run_analysis()
+    flash(message, 'success')
+    return jsonify({"status": message})
 
 @app.route('/admin/dashboard')
 @admin_required

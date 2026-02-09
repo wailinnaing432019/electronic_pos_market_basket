@@ -58,17 +58,19 @@
             <div id="insight-alert" class="card border-0 shadow-sm text-white animate__animated animate__fadeIn"
                 style="display: none; background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);">
                 <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
-                            <h5 class="fw-bold mb-1"><i class="bi bi-lightbulb-fill me-2 text-warning"></i>Smart
-                                Business Insights</h5>
-                            <p class="small opacity-75 mb-0">ဝယ်ယူမှု Patterns များအပေါ် အခြေခံထားသော အကြံပြုချက် ၅ ခု
-                            </p>
+                            <h2 class="fw-bold mb-0 text-dark">Business Intelligence</h2>
+                            <p class="text-muted small">Real-time Data Mining Insights</p>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3"
-                            onclick="showRandomBatch()">
-                            <i class="bi bi-arrow-clockwise me-1"></i> Shuffle
-                        </button>
+                        <div class="d-flex gap-2">
+                            <button id="runMiningBtn" class="btn btn-primary shadow-sm rounded-pill px-4">
+                                <i class="bi bi-arrow-repeat me-1"></i> Update Analysis
+                            </button>
+                            <span class="badge bg-soft-primary text-primary border border-primary px-3 py-2">
+                                <i class="bi bi-cpu-fill me-1"></i> AI Engine Active
+                            </span>
+                        </div>
                     </div>
 
                     <div id="rules-list-container" class="mt-2">
@@ -249,7 +251,36 @@
     // ၂ မိနစ် တစ်ကြိမ် auto-shuffle လုပ်မယ်
     setInterval(showRandomBatch, 120000);
 </script>
+<script>
+    document.getElementById('runMiningBtn').addEventListener('click', function () {
+        const btn = this;
+        const originalText = btn.innerHTML;
 
+        // ခလုတ်ကို Loading အခြေအနေ ပြောင်းမယ်
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mining...';
+
+        // Backend API ကို လှမ်းခေါ်မယ် (Route နာမည်ကို /admin/run-mining လို့ ယူဆထားပါတယ်)
+        fetch('/admin/run-mining')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status.includes('Success')) {
+                    console.log('Analysis Updated Successfully!');
+                    location.reload(); // Data အသစ်တွေမြင်ရအောင် Refresh လုပ်မယ်
+                } else {
+                    console.log('Error: ' + data.status);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                console.log('Something went wrong!');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            });
+    });
+</script>
 <style>
     .bg-soft-primary {
         background-color: rgba(78, 115, 223, 0.1);
